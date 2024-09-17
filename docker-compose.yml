@@ -1,0 +1,48 @@
+# Define network
+networks:
+  dotnetngnetwork:
+    name: dotnetngnetwork
+    driver: bridge
+
+# Define services
+services:
+  # Postgres database
+  pgdb:
+    image: postgres:16.3-alpine
+    container_name: pgstoredb_container
+    volumes:
+      - ./postgresdb/data:/var/lib/postgresql/data
+      - ./postgresdb/initdb:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_DB: storedb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "6432:5432"
+    restart: always
+    networks:
+      - dotnetngnetwork
+  # Dotnet API Backend
+  dotnetapi:
+    image: dotnetapi:1.0
+    container_name: dotnetapi_container
+    build: backend/
+    ports:
+      - "8081:8081"
+    depends_on:
+      - pgdb
+    restart: always
+    networks:
+      - dotnetngnetwork
+  # Angular Frontend
+  angularapp:
+    image: angularapp:1.0
+    container_name: angularapp_container
+    build: frontend/
+    ports:
+      - "8080:80"
+    depends_on:
+      - dotnetapi
+    restart: always
+    networks:
+      - dotnetngnetwork
